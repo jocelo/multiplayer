@@ -8,6 +8,7 @@ const server = http.Server(app).listen(8080);
 const io = socketIo(server);
 const clients = {};
 
+// to allow CORS
 io.origins('*:*');
 
 // Serve static resources
