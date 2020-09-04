@@ -5,7 +5,7 @@ const socketIo = require("socket.io");
 const fs = require("fs");
 
 const server = http.Server(app).listen(8080);
-const io = socketIo(server);
+const io = socketIo(server, {origins:'*:*'});
 const clients = {};
 
 // to allow CORS
