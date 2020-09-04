@@ -4,10 +4,13 @@ const app = express();
 const cors = require('cors');
 const socketIo = require("socket.io");
 const fs = require("fs");
+const PORT = process.env.PORT || '8080';
 
-const server = http.Server(app).listen(8080);
+const server = http.Server(app).listen(PORT);
 const io = socketIo(server, {origins:'*:*'});
 const clients = {};
+
+console.log('listening on port', PORT);
 
 // to allow CORS
 io.origins('*:*');
