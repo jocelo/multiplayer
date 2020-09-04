@@ -1,6 +1,7 @@
 const http = require("http")
 const express = require("express");
 const app = express();
+const cors = require('cors');
 const socketIo = require("socket.io");
 const fs = require("fs");
 
@@ -10,6 +11,9 @@ const clients = {};
 
 // to allow CORS
 io.origins('*:*');
+
+// enable CORS
+app.use(cors());
 
 // Serve static resources
 app.use(express.static(__dirname + "/../client/"));
