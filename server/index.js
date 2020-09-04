@@ -8,6 +8,8 @@ const server = http.Server(app).listen(8080);
 const io = socketIo(server);
 const clients = {};
 
+io.origins('*:*');
+
 // Serve static resources
 app.use(express.static(__dirname + "/../client/"));
 app.use(express.static(__dirname + "/../node_modules/"));
