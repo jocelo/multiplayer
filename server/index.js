@@ -27,17 +27,16 @@ app.get("/", (req, res) => {
     stream.pipe(res);
 });
 
-var players = {}; // opponent: scoket.id of the opponent, symbol = "X" | "O", socket: player's socket
+var games = {}; // opponent: scoket.id of the opponent, symbol = "X" | "O", socket: player's socket
 var unmatched;
-
 
 // When a client connects
 io.on("connection", function(socket) {
     let id = socket.id;
-    let token = socket.handshake.query.gameId;
+    const token = socket.handshake.query.gameId;
+    const character = socket.handshake.query.character;
 
-    console.log("New client connected. ID: ", socket.id);
-    // console.log('with the game ID as:', token);
+    console.log(`${socket.id} playing as ${character}`);
     clients[socket.id] = socket;
 
     socket.on("disconnect", () => {// Bind event for that socket (player)
@@ -46,21 +45,26 @@ io.on("connection", function(socket) {
         socket.broadcast.emit("clientdisconnect", socket.id);
     });
 
-    join(socket); // Fill 'players' data structure
+    join(socket, character); // Fill 'players' data structure
 
     if (opponentOf(socket)) { // If the current player has an opponent the game can begin
+
+        // console.log( ' > ', games[socket.id].socket.id );
+        // console.log(' > ', games[opponentOf(socket).id].socket.id );
+        console.log( '(1) =', games[socket.id].character);
+        console.log( '(2) =', games[opponentOf(socket).id].character);
         socket.emit("game.begin", { // Send the game.begin event to the player
-            symbol: players[socket.id].symbol,
+            symbol: games[socket.id].symbol,
             gameId: socket.id,
-            player: 'alice',
-            opponent: 'madhatter'
+            player: games[socket.id].character,
+            opponent: games[opponentOf(socket).id].character
         });
 
         opponentOf(socket).emit("game.begin", { // Send the game.begin event to the opponent
-            symbol: players[opponentOf(socket).id].symbol,
+            symbol: games[opponentOf(socket).id].symbol,
             gameId: socket.id,
-            player: 'madhatter',
-            opponent: 'alice'
+            player: games[opponentOf(socket).id].character,
+            opponent: games[socket.id].character
         });
     }
 
@@ -78,11 +82,6 @@ io.on("connection", function(socket) {
         opponentOf(socket).emit("move.made", data); // Emit for the opponent
     });
 
-    socket.on('MY_MSG', (msg) => {
-        console.log('message: ' + msg);
-        io.emit('request.new.game', `server sais: hello back to you MF!!`);
-    });
-
     // Event to inform player that the opponent left
     socket.on('disconnect', function() {
         if (opponentOf(socket)) {
@@ -91,40 +90,45 @@ io.on("connection", function(socket) {
     });
 
     socket.on('new.game', () => {
-        console.log('i request a new game!');
-        io.emit('request.new.game', `server sais: hello back to you MF!!`);
-    })
-
+        io.emit('request.new.game', '');
+        io.emit('notify', 'Se ha comenzado un nuevo juego.');
+    });
 });
 
 
-function join(socket) {
-    console.log('will join this game:', socket.id);
+function join(socket, character) {
+    console.log(`${character} from game ${socket.id}`);
     // console.log('how many games do we have?', players.length);
 
-    players[socket.id] = {
+    games[socket.id] = {
         opponent: unmatched,
         symbol: "X",
-        socket: socket
+        socket: socket,
+        character: character
     };
+    // console.log('player 1 !', character);
 
     // If 'unmatched' is defined it contains the socket.id of the player who was waiting for an opponent
     // then, the current socket is player #2
     if (unmatched) { 
         // console.log('player 2');
-        players[socket.id].symbol = "O";
-        players[unmatched].opponent = socket.id;
+        games[socket.id].symbol = "O";
+        games[unmatched].opponent = socket.id;
+        // games[unmatched].character = character;
         unmatched = null;
+        // console.log('player 2 !', character, unmatched);
     } else { //If 'unmatched' is not define it means the player (current socket) is waiting for an opponent (player #1)
         // console.log('player 1');
         unmatched = socket.id;
+        //games[socket.id]['character'] = character;
+        // console.log('this is unmatched!!', socket.id);
     }
 }
 
 function opponentOf(socket) {
     // console.log('opponentOf socket', socket);
-    if (!players[socket.id].opponent) {
+    if (!games[socket.id].opponent) {
         return;
     }
-    return players[players[socket.id].opponent].socket;
+    return games[games[socket.id].opponent].socket;
 }
